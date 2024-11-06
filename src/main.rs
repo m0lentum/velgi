@@ -1,5 +1,7 @@
 use starframe as sf;
 
+pub mod level;
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let window = sf::winit::window::WindowBuilder::new()
         .with_title("velgi")
@@ -21,13 +23,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-struct State {
+pub struct State {
     assets: Assets,
+    tile_gen: level::TileGenerator,
     camera: sf::Camera,
     env_map: sf::EnvironmentMap,
 }
 
-struct Assets {
+pub struct Assets {
     block_collider: sf::Collider,
     // meshes will come from gltf eventually,
     // but it might still be nice to have them in this struct
@@ -42,7 +45,7 @@ struct Assets {
 
 impl Assets {
     fn load(game: &mut sf::Game) -> Self {
-        let block_collider = sf::Collider::new_square(1.);
+        let block_collider = sf::Collider::new_square(level::TILE_SIZE as f64);
         let block_mesh = game.graphics.create_mesh(sf::MeshParams {
             name: Some("block"),
             data: sf::MeshData::from(block_collider),
@@ -53,7 +56,7 @@ impl Assets {
             base_color: Some([0.660, 0.441, 0.191, 1.]),
             attenuation: Some(sf::AttenuationParams {
                 color: [0.660, 0.441, 0.191],
-                distance: 0.05,
+                distance: 0.2,
             }),
             ..Default::default()
         });
@@ -120,19 +123,28 @@ impl Assets {
 impl sf::GameState for State {
     fn init(game: &mut sf::Game) -> Self {
         let assets = Assets::load(game);
+        let tile_gen = level::TileGenerator::new(include_str!("level/patterns.txt"));
 
-        let camera = sf::Camera::new();
-
-        let env_map = sf::EnvironmentMap::preset_night();
+        let mut camera = sf::Camera::new();
+        camera.pose.translation.x = level::LEVEL_WIDTH / 2.;
+        camera.view_width = level::LEVEL_WIDTH;
+        camera.view_height = level::LEVEL_WIDTH;
+        let env_map = sf::EnvironmentMap::preset_day();
 
         Self {
             assets,
+            tile_gen,
             camera,
             env_map,
         }
     }
 
     fn tick(&mut self, game: &mut sf::Game) -> Option<()> {
+        let player_height = self.camera.pose.translation.y;
+        self.camera.pose.translation.y += 0.05;
+        self.tile_gen
+            .gen_until(game, &self.assets, player_height as usize + 30);
+
         Some(())
     }
 
