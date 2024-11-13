@@ -1,6 +1,7 @@
 use starframe as sf;
 
 pub mod level;
+pub mod player;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let window = sf::winit::window::WindowBuilder::new()
@@ -62,7 +63,12 @@ impl Assets {
         });
         game.graphics.set_mesh_material(block_mesh, block_material);
 
-        let player_collider = sf::Collider::new_rounded_rect(1., 1., 0.1);
+        let player_collider =
+            sf::Collider::new_rounded_rect(0.8, 1., 0.1).with_material(sf::PhysicsMaterial {
+                static_friction_coef: None,
+                dynamic_friction_coef: None,
+                restitution_coef: 0.,
+            });
         let player_mesh = game.graphics.create_mesh(sf::MeshParams {
             name: Some("player"),
             data: sf::MeshData::from(player_collider),
@@ -125,6 +131,7 @@ impl sf::GameState for State {
         let assets = Assets::load(game);
         let mut level_gen = level::LevelGenerator::new(include_str!("level/patterns.txt"));
         level_gen.generate(game, &assets);
+        player::spawn(game, &assets);
 
         let mut camera = sf::Camera::new();
         camera.pose.translation.x = level::LEVEL_WIDTH / 2.;
@@ -141,7 +148,12 @@ impl sf::GameState for State {
     }
 
     fn tick(&mut self, game: &mut sf::Game) -> Option<()> {
-        self.camera.pose.translation.y += 0.05;
+        player::tick(game);
+        // sf note: probably would be nicer to take a 32-bit vector for this forcefield
+        // (in general the mixing of f64 and f32 is a bit unfortunate)
+        game.physics_tick(&sf::forcefield::Gravity(sf::DVec2::new(0., -15.)), None);
+
+        player::move_camera(game, &mut self.camera);
 
         Some(())
     }
