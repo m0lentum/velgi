@@ -885,6 +885,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "itertools"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1733,7 +1742,7 @@ dependencies = [
  "gltf",
  "hecs",
  "instant",
- "itertools",
+ "itertools 0.10.5",
  "js-sys",
  "log",
  "parking_lot 0.11.2",
@@ -1997,6 +2006,7 @@ checksum = "830b7e5d4d90034032940e4ace0d9a9a057e7a45cd94e6c007832e39edb82f6d"
 name = "velgi"
 version = "0.1.0"
 dependencies = [
+ "itertools 0.13.0",
  "rand",
  "starframe",
 ]

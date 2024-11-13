@@ -1,12 +1,55 @@
-XXXXXX__cxc_________
-_____W__________ccc_
-_____W_____c________
-___XXXXX_______XX___
-____________________
-Ccc_______cCc____ccc
+# each pattern is 10 blocks wide (half the screen) # and 8 blocks high.
+# these are the patterns as they appear on the left side of the screen;
+# right side is mirrored.
+# symbols:
+# X = strong ground
+# W = weak ground
+# C = cloud
+# anything else = empty
+# capitals are always there, lowercase have a random chance to appear.
+# patterns should be separated by a single empty line
+#
+XXXXXX__cc
+_____W____
+_____W____
+___XXXXX__
+__________
+Ccc_______
+_______cCC
+__________
 
-____________________
-WWWWWWWWWWWWWWWWWWWW
-____________________
-____________________
-wwWWWww______wwWWWww
+cc________
+______ccc_
+_c_c______
+_____XX___
+__________
+CCc_______
+_______cCC
+__________
+
+WWWWWWWWWW
+__________
+__________
+_wWWWw____
+__________
+__________
+__ccc___CC
+__________
+
+WWWWWWWWWW
+__________
+__________
+___CXXC___
+__________
+Cc________
+_____cCc__
+__________
+
+_CC_____cC
+_____c____
+__________
+_c__CCC___
+__________
+__________
+__ccc___CC
+__________

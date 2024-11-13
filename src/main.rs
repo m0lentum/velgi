@@ -25,7 +25,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 pub struct State {
     assets: Assets,
-    tile_gen: level::TileGenerator,
+    level_gen: level::LevelGenerator,
     camera: sf::Camera,
     env_map: sf::EnvironmentMap,
 }
@@ -123,7 +123,8 @@ impl Assets {
 impl sf::GameState for State {
     fn init(game: &mut sf::Game) -> Self {
         let assets = Assets::load(game);
-        let tile_gen = level::TileGenerator::new(include_str!("level/patterns.txt"));
+        let mut level_gen = level::LevelGenerator::new(include_str!("level/patterns.txt"));
+        level_gen.generate(game, &assets);
 
         let mut camera = sf::Camera::new();
         camera.pose.translation.x = level::LEVEL_WIDTH / 2.;
@@ -133,17 +134,14 @@ impl sf::GameState for State {
 
         Self {
             assets,
-            tile_gen,
+            level_gen,
             camera,
             env_map,
         }
     }
 
     fn tick(&mut self, game: &mut sf::Game) -> Option<()> {
-        let player_height = self.camera.pose.translation.y;
         self.camera.pose.translation.y += 0.05;
-        self.tile_gen
-            .gen_until(game, &self.assets, player_height as usize + 30);
 
         Some(())
     }
