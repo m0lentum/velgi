@@ -49,22 +49,17 @@ pub struct Assets {
 
 impl Assets {
     fn load(game: &mut sf::Game) -> Self {
+        game.graphics
+            .load_gltf("assets/models.glb")
+            .expect("assets/models.glb not found");
+
         let block_collider = sf::Collider::new_square(level::TILE_SIZE as f64);
-        let block_mesh = game.graphics.create_mesh(sf::MeshParams {
-            name: Some("block"),
-            data: sf::MeshData::from(block_collider),
-            ..Default::default()
-        });
-        let block_material = game.graphics.create_material(sf::MaterialParams {
-            name: Some("block"),
-            base_color: Some([0.660, 0.441, 0.191, 1.]),
-            attenuation: Some(sf::AttenuationParams {
-                color: [0.660, 0.441, 0.191],
-                distance: 0.2,
-            }),
-            ..Default::default()
-        });
-        game.graphics.set_mesh_material(block_mesh, block_material);
+        // sf note: would be much nicer if we had a default mesh as a fallback
+        // instead of having to deal with options here
+        let block_mesh = game
+            .graphics
+            .get_mesh_id("models.block_wood")
+            .expect("block_wood not in models.glb");
 
         let cloud_mesh = game.graphics.create_mesh(sf::MeshParams {
             name: Some("cloud"),
@@ -96,7 +91,7 @@ impl Assets {
         let player_material = game.graphics.create_material(sf::MaterialParams {
             name: Some("player"),
             base_color: Some([0.598, 0.740, 0.333, 1.]),
-            emissive_color: Some([0.598, 0.740, 0.333, 0.5]),
+            emissive_color: Some([0.598, 0.740, 0.333, 1.]),
             attenuation: Some(sf::AttenuationParams {
                 color: [0.598, 0.740, 0.333],
                 distance: 0.5,
@@ -114,7 +109,7 @@ impl Assets {
         let player_material_doublejumped = game.graphics.create_material(sf::MaterialParams {
             name: Some("player doublejump spent"),
             base_color: Some([0.700, 0.368, 0.161, 1.]),
-            emissive_color: Some([0.700, 0.368, 0.161, 0.5]),
+            emissive_color: Some([0.700, 0.368, 0.161, 1.]),
             attenuation: Some(sf::AttenuationParams {
                 color: [0.700, 0.368, 0.161],
                 distance: 0.5,
@@ -178,8 +173,11 @@ impl sf::GameState for State {
 
         let mut camera = sf::Camera::new();
         camera.pose.translation.x = level::LEVEL_WIDTH / 2.;
-        camera.view_width = level::LEVEL_WIDTH;
-        camera.view_height = level::LEVEL_WIDTH;
+        // always scale the view to the same height
+        // (this can lose sight of the level edges if the window is too narrow.
+        // sf note: add a way to enforce 16:9 aspect ratio)
+        camera.view_width = 1.;
+        camera.view_height = level::VIEW_HEIGHT;
 
         let mut env_map = sf::EnvironmentMap::preset_night();
         env_map.lights.clear();
@@ -195,7 +193,8 @@ impl sf::GameState for State {
     fn tick(&mut self, game: &mut sf::Game) -> Option<()> {
         player::tick(game, &self.assets);
         // sf note: probably would be nicer to take a 32-bit vector for this forcefield
-        // (in general the mixing of f64 and f32 is a bit unfortunate)
+        // (in general the mixing of f64 and f32 is a bit unfortunate, also in collider parameters.
+        // probably should take f32s in every user-facing API)
         game.physics_tick(&sf::forcefield::Gravity(sf::DVec2::new(0., -15.)), None);
 
         player::move_camera(game, &mut self.camera);

@@ -9,6 +9,8 @@ pub const LEVEL_WIDTH: f32 = TILEMAP_WIDTH as f32 * TILE_SIZE;
 pub const CHUNK_HEIGHT: i32 = 8;
 /// Height of an entire level measured in chunks of CHUNK_HEIGHT tiles
 pub const LEVEL_HEIGHT: i32 = 30;
+/// Height seen on camera at any given time
+pub const VIEW_HEIGHT: f32 = 14.;
 
 pub struct LevelGenerator {
     patterns: Vec<String>,
