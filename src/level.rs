@@ -40,9 +40,23 @@ impl LevelGenerator {
     /// Spawn entities that are part of the level but not given by random tile gen
     /// (player, starting platform, spike roll, etc.)
     fn spawn_fixtures(&self, game: &mut sf::Game, assets: &super::Assets) {
+        // starting platforms
         for height in -4..0 {
             Tile::GroundUnbreakable.spawn(game, assets, (0, height));
             Tile::GroundUnbreakable.spawn(game, assets, (TILEMAP_WIDTH - 1, height));
+        }
+
+        // background walls
+        let chunk_height = CHUNK_HEIGHT as f32 * TILE_SIZE;
+        for chunk_idx in -1..LEVEL_HEIGHT + 1 {
+            let halfway_width = LEVEL_WIDTH / 2.;
+            let mid_height = (chunk_idx as f32 + 0.5) * chunk_height;
+            let pose = sf::PoseBuilder::new()
+                .with_position([halfway_width, mid_height])
+                .with_depth(10.)
+                .build();
+            let mesh = assets.background_mesh;
+            game.world.spawn((pose, mesh));
         }
     }
 
@@ -122,8 +136,11 @@ impl Tile {
         let pose = sf::PoseBuilder::new().with_position(ent_pos).build();
         let coll = assets.block_collider;
         let coll_key = game.physics.entity_set.insert_collider(coll);
-        // TODO pick graphic based on type
-        let mesh_id = assets.block_mesh;
+        let mesh_id = match self {
+            Self::GroundUnbreakable | Self::GroundStrong | Self::GroundWeak => assets.block_mesh,
+            Self::Cloud => assets.cloud_mesh,
+            Self::Empty => unreachable!(),
+        };
 
         game.world.spawn((pose, coll_key, mesh_id));
     }

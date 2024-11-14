@@ -37,6 +37,7 @@ pub struct Assets {
     // but it might still be nice to have them in this struct
     // so we don't have to look them up by string id
     block_mesh: sf::MeshId,
+    cloud_mesh: sf::MeshId,
     player_collider: sf::Collider,
     player_mesh: sf::MeshId,
     bullet_collider: sf::Collider,
@@ -63,6 +64,22 @@ impl Assets {
         });
         game.graphics.set_mesh_material(block_mesh, block_material);
 
+        let cloud_mesh = game.graphics.create_mesh(sf::MeshParams {
+            name: Some("cloud"),
+            data: sf::MeshData::from(block_collider),
+            ..Default::default()
+        });
+        let cloud_material = game.graphics.create_material(sf::MaterialParams {
+            name: Some("block"),
+            base_color: Some([0.722, 0.807, 0.820, 1.]),
+            attenuation: Some(sf::AttenuationParams {
+                color: [0.722, 0.807, 0.820],
+                distance: 0.5,
+            }),
+            ..Default::default()
+        });
+        game.graphics.set_mesh_material(cloud_mesh, cloud_material);
+
         let player_collider =
             sf::Collider::new_rounded_rect(0.8, 1., 0.1).with_material(sf::PhysicsMaterial {
                 static_friction_coef: None,
@@ -77,9 +94,10 @@ impl Assets {
         let player_material = game.graphics.create_material(sf::MaterialParams {
             name: Some("player"),
             base_color: Some([0.598, 0.740, 0.333, 1.]),
+            emissive_color: Some([0.598, 0.740, 0.333, 0.5]),
             attenuation: Some(sf::AttenuationParams {
                 color: [0.598, 0.740, 0.333],
-                distance: 0.05,
+                distance: 0.5,
             }),
             ..Default::default()
         });
@@ -103,12 +121,15 @@ impl Assets {
 
         let background_mesh = game.graphics.create_mesh(sf::MeshParams {
             name: Some("wall"),
-            data: sf::MeshData::from(sf::Collider::new_rect(20., 20.)),
+            data: sf::MeshData::from(sf::Collider::new_rect(
+                level::TILEMAP_WIDTH as f64 * level::TILE_SIZE as f64,
+                level::CHUNK_HEIGHT as f64 * level::TILE_SIZE as f64,
+            )),
             ..Default::default()
         });
         let background_material = game.graphics.create_material(sf::MaterialParams {
             name: Some("wall"),
-            base_color: Some([0.0800, 0.0593, 0.0400, 1.]),
+            base_color: Some([0.227, 0.265, 0.420, 1.]),
             ..Default::default()
         });
         game.graphics
@@ -117,6 +138,7 @@ impl Assets {
         Self {
             block_collider,
             block_mesh,
+            cloud_mesh,
             player_collider,
             player_mesh,
             bullet_collider,
@@ -137,7 +159,9 @@ impl sf::GameState for State {
         camera.pose.translation.x = level::LEVEL_WIDTH / 2.;
         camera.view_width = level::LEVEL_WIDTH;
         camera.view_height = level::LEVEL_WIDTH;
-        let env_map = sf::EnvironmentMap::preset_day();
+
+        let mut env_map = sf::EnvironmentMap::preset_night();
+        env_map.lights.clear();
 
         Self {
             assets,
