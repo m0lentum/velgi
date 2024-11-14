@@ -40,6 +40,8 @@ pub struct Assets {
     cloud_mesh: sf::MeshId,
     player_collider: sf::Collider,
     player_mesh: sf::MeshId,
+    // separate mesh with a different color for when double jump is spent
+    player_mesh_doublejumped: sf::MeshId,
     bullet_collider: sf::Collider,
     bullet_mesh: sf::MeshId,
     background_mesh: sf::MeshId,
@@ -104,6 +106,24 @@ impl Assets {
         game.graphics
             .set_mesh_material(player_mesh, player_material);
 
+        let player_mesh_doublejumped = game.graphics.create_mesh(sf::MeshParams {
+            name: Some("player"),
+            data: sf::MeshData::from(player_collider),
+            ..Default::default()
+        });
+        let player_material_doublejumped = game.graphics.create_material(sf::MaterialParams {
+            name: Some("player doublejump spent"),
+            base_color: Some([0.700, 0.368, 0.161, 1.]),
+            emissive_color: Some([0.700, 0.368, 0.161, 0.5]),
+            attenuation: Some(sf::AttenuationParams {
+                color: [0.700, 0.368, 0.161],
+                distance: 0.5,
+            }),
+            ..Default::default()
+        });
+        game.graphics
+            .set_mesh_material(player_mesh_doublejumped, player_material_doublejumped);
+
         let bullet_collider = sf::Collider::new_circle(0.8);
         let bullet_mesh = game.graphics.create_mesh(sf::MeshParams {
             name: Some("bullet"),
@@ -141,6 +161,7 @@ impl Assets {
             cloud_mesh,
             player_collider,
             player_mesh,
+            player_mesh_doublejumped,
             bullet_collider,
             bullet_mesh,
             background_mesh,
@@ -172,7 +193,7 @@ impl sf::GameState for State {
     }
 
     fn tick(&mut self, game: &mut sf::Game) -> Option<()> {
-        player::tick(game);
+        player::tick(game, &self.assets);
         // sf note: probably would be nicer to take a 32-bit vector for this forcefield
         // (in general the mixing of f64 and f32 is a bit unfortunate)
         game.physics_tick(&sf::forcefield::Gravity(sf::DVec2::new(0., -15.)), None);

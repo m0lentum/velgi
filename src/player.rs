@@ -1,17 +1,22 @@
 use starframe as sf;
 
 const PLAYER_MASS: f64 = 1.;
-const MAX_XSPEED: f64 = 5.;
-const JUMP_YSPEED: f64 = 10.;
+const MAX_XSPEED: f64 = 7.;
+const JUMP_YSPEED: f64 = 12.;
+const COYOTE_TIME_FRAMES: u32 = 3;
 
 struct PlayerState {
     has_doublejump: bool,
+    frames_since_on_ground: u32,
+    holding_jump: bool,
 }
 
 impl Default for PlayerState {
     fn default() -> Self {
         Self {
             has_doublejump: true,
+            frames_since_on_ground: 0,
+            holding_jump: false,
         }
     }
 }
@@ -34,8 +39,25 @@ pub fn spawn(game: &mut sf::Game, assets: &super::Assets) {
     game.world.spawn((state, pose, coll, body, mesh));
 }
 
-pub fn tick(game: &mut sf::Game) {
-    for (_, (state, body_key)) in game.world.query_mut::<(&mut PlayerState, &sf::BodyKey)>() {
+pub fn tick(game: &mut sf::Game, assets: &super::Assets) {
+    for (_, (state, body_key, coll_key, mesh)) in game.world.query_mut::<(
+        &mut PlayerState,
+        &sf::BodyKey,
+        &sf::ColliderKey,
+        &mut sf::MeshId,
+    )>() {
+        let is_on_ground = game
+            .physics
+            .contacts_for_collider(*coll_key)
+            .any(|c| c.normal.y < -0.9);
+        if is_on_ground {
+            state.has_doublejump = true;
+            state.frames_since_on_ground = 0;
+        } else {
+            state.frames_since_on_ground += 1;
+        }
+        let is_coyote_time = state.frames_since_on_ground < COYOTE_TIME_FRAMES;
+
         let body = game
             .physics
             .entity_set
@@ -49,16 +71,34 @@ pub fn tick(game: &mut sf::Game) {
             pos_btn: sf::Key::ArrowRight.into(),
             neg_btn: sf::Key::ArrowLeft.into(),
         });
-        let jump_input = game.input.button(sf::Key::ShiftLeft.into());
+        let jump_btn = sf::ButtonQuery::kb(sf::Key::ShiftLeft);
+        let jump_input = game.input.button(jump_btn);
+        let jump_released = game.input.button(jump_btn.released());
 
         body.velocity.linear.x = lr_input * MAX_XSPEED;
 
-        if jump_input && state.has_doublejump {
+        // jump
+        if jump_input && (is_coyote_time || state.has_doublejump) {
             body.velocity.linear.y = JUMP_YSPEED;
-            state.has_doublejump = false;
+            state.holding_jump = true;
+            if !is_coyote_time {
+                state.has_doublejump = false;
+            }
+        }
+        // cut jump short when button released
+        if state.holding_jump && jump_released {
+            state.holding_jump = false;
+            if body.velocity.linear.y > 0. {
+                body.velocity.linear.y *= 0.25;
+            }
         }
 
-        state.has_doublejump = true;
+        // change the mesh depending on whether double jump is spent
+        *mesh = if state.has_doublejump {
+            assets.player_mesh
+        } else {
+            assets.player_mesh_doublejumped
+        };
     }
 }
 
