@@ -1,5 +1,7 @@
 use starframe as sf;
 
+use crate::level::tile::BreakableTile;
+
 const PLAYER_MASS: f64 = 1.;
 const MAX_XSPEED: f64 = 7.;
 const JUMP_YSPEED: f64 = 12.;
@@ -40,16 +42,28 @@ pub fn spawn(game: &mut sf::Game, assets: &super::Assets) {
 }
 
 pub fn tick(game: &mut sf::Game, assets: &super::Assets) {
+    // gather tiles to break into a buffer and apply at the end
+    // so that we don't need nested hecs queries
+    let mut tiles_touched: Vec<sf::hecs::Entity> = Vec::new();
+
     for (_, (state, body_key, coll_key, mesh)) in game.world.query_mut::<(
         &mut PlayerState,
         &sf::BodyKey,
         &sf::ColliderKey,
         &mut sf::MeshId,
     )>() {
-        let is_on_ground = game
-            .physics
-            .contacts_for_collider(*coll_key)
-            .any(|c| c.normal.y < -0.9);
+        // check for being on the ground and also begin destroy blocks touched
+        let mut is_on_ground = false;
+        for cont in game.physics.contacts_for_collider(*coll_key) {
+            if cont.normal.y < -0.9 {
+                is_on_ground = true;
+
+                if let Some(ent) = game.hecs_sync.get_collider_entity(cont.colliders[1]) {
+                    tiles_touched.push(ent);
+                }
+            }
+        }
+
         if is_on_ground {
             state.has_doublejump = true;
             state.frames_since_on_ground = 0;
@@ -99,6 +113,12 @@ pub fn tick(game: &mut sf::Game, assets: &super::Assets) {
         } else {
             assets.player_mesh_doublejumped
         };
+    }
+
+    for ent in tiles_touched {
+        if let Ok(mut tile) = game.world.get::<&mut BreakableTile>(ent) {
+            tile.is_breaking = true;
+        }
     }
 }
 

@@ -1,6 +1,9 @@
 use itertools::Itertools;
-use rand::{seq::SliceRandom, Rng};
+use rand::seq::SliceRandom;
 use starframe as sf;
+
+pub mod tile;
+use tile::Tile;
 
 pub const TILEMAP_WIDTH: i32 = 20;
 pub const TILE_SIZE: f32 = 1.;
@@ -87,63 +90,5 @@ impl LevelGenerator {
                 }
             }
         }
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-enum Tile {
-    Empty,
-    Cloud,
-    GroundWeak,
-    GroundStrong,
-    // unbreakable ground only at the starting platform
-    GroundUnbreakable,
-}
-
-impl Tile {
-    fn pick(c: char) -> Self {
-        let mut rng = rand::thread_rng();
-        // some tiles only spawn occasionally,
-        // represented by the probability given here
-        let (tile, chance) = match c {
-            'X' => (Self::GroundStrong, 1.),
-            'x' => (Self::GroundStrong, 0.5),
-            'W' => (Self::GroundWeak, 1.),
-            'w' => (Self::GroundWeak, 0.5),
-            'C' => (Self::Cloud, 1.),
-            'c' => (Self::Cloud, 0.5),
-            _ => (Self::Empty, 1.),
-        };
-
-        if chance == 1. {
-            return tile;
-        }
-
-        if rng.gen_bool(chance) {
-            tile
-        } else {
-            Self::Empty
-        }
-    }
-
-    /// Spawn this tile at the given position in the grid.
-    fn spawn(self, game: &mut sf::Game, assets: &super::Assets, pos: (i32, i32)) {
-        if let Self::Empty = self {
-            return;
-        }
-
-        // position the center of the tile in the middle of the grid space
-        let ent_pos = sf::Vec2::new(pos.0 as f32 + 0.5, pos.1 as f32 + 0.5) * TILE_SIZE;
-
-        let pose = sf::PoseBuilder::new().with_position(ent_pos).build();
-        let coll = assets.block_collider;
-        let coll_key = game.physics.entity_set.insert_collider(coll);
-        let mesh_id = match self {
-            Self::GroundUnbreakable | Self::GroundStrong | Self::GroundWeak => assets.block_mesh,
-            Self::Cloud => assets.cloud_mesh,
-            Self::Empty => unreachable!(),
-        };
-
-        game.world.spawn((pose, coll_key, mesh_id));
     }
 }

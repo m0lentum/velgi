@@ -199,6 +199,8 @@ impl sf::GameState for State {
 
         player::move_camera(game, &mut self.camera);
 
+        level::tile::break_tiles(game);
+
         Some(())
     }
 
