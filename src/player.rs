@@ -7,10 +7,16 @@ const MAX_XSPEED: f64 = 7.;
 const JUMP_YSPEED: f64 = 12.;
 const COYOTE_TIME_FRAMES: u32 = 3;
 
+const BULLET_SPEED: f64 = 25.;
+
 struct PlayerState {
     has_doublejump: bool,
     frames_since_on_ground: u32,
     holding_jump: bool,
+    // aim direction stored here
+    // so that we can shoot in the previously pressed direction
+    // if no direction is currently held
+    aim_dir: sf::DVec2,
 }
 
 impl Default for PlayerState {
@@ -19,9 +25,13 @@ impl Default for PlayerState {
             has_doublejump: true,
             frames_since_on_ground: 0,
             holding_jump: false,
+            aim_dir: sf::DVec2::unit_x(),
         }
     }
 }
+
+/// Marker struct to identify bullets
+struct Bullet;
 
 pub fn spawn(game: &mut sf::Game, assets: &super::Assets) {
     let state = PlayerState::default();
@@ -30,7 +40,9 @@ pub fn spawn(game: &mut sf::Game, assets: &super::Assets) {
     // collider is currently in assets to make a mesh out of it.
     // TODO: once we have art assets it would be cleaner
     // to have the collider definition here in this file
-    let coll = assets.player_collider;
+    let coll = assets
+        .player_collider
+        .with_layer(crate::physics_layers::PLAYER);
     let body = game
         .physics
         .entity_set
@@ -45,9 +57,30 @@ pub fn tick(game: &mut sf::Game, assets: &super::Assets) {
     // gather tiles to break into a buffer and apply at the end
     // so that we don't need nested hecs queries
     let mut tiles_touched: Vec<sf::hecs::Entity> = Vec::new();
+    // also defer spawning of a possible bullet
+    let mut bullet_position: Option<sf::Vec2> = None;
+    let mut aim_dir = sf::DVec2::unit_x();
 
-    for (_, (state, body_key, coll_key, mesh)) in game.world.query_mut::<(
+    // read controls
+    // TODO configurable keys, gamepad support
+    let lr_input = game.input.axis(sf::AxisQuery {
+        pos_btn: sf::Key::ArrowRight.into(),
+        neg_btn: sf::Key::ArrowLeft.into(),
+    });
+    let tb_input = game.input.axis(sf::AxisQuery {
+        pos_btn: sf::Key::ArrowUp.into(),
+        neg_btn: sf::Key::ArrowDown.into(),
+    });
+    let jump_btn = sf::ButtonQuery::kb(sf::Key::ShiftLeft);
+    let jump_input = game.input.button(jump_btn);
+    let jump_released = game.input.button(jump_btn.released());
+    let shoot_input = game.input.button(sf::ButtonQuery::kb(sf::Key::KeyZ));
+
+    // working around this query is kind of annoying for some stuff,
+    // maybe refactor player state into a struct kept in the top-level state instead
+    for (_, (state, pose, body_key, coll_key, mesh)) in game.world.query_mut::<(
         &mut PlayerState,
+        &sf::Pose,
         &sf::BodyKey,
         &sf::ColliderKey,
         &mut sf::MeshId,
@@ -80,15 +113,6 @@ pub fn tick(game: &mut sf::Game, assets: &super::Assets) {
 
         // controls
 
-        // TODO configurable keys, gamepad support
-        let lr_input = game.input.axis(sf::AxisQuery {
-            pos_btn: sf::Key::ArrowRight.into(),
-            neg_btn: sf::Key::ArrowLeft.into(),
-        });
-        let jump_btn = sf::ButtonQuery::kb(sf::Key::ShiftLeft);
-        let jump_input = game.input.button(jump_btn);
-        let jump_released = game.input.button(jump_btn.released());
-
         body.velocity.linear.x = lr_input * MAX_XSPEED;
 
         // jump
@@ -113,12 +137,43 @@ pub fn tick(game: &mut sf::Game, assets: &super::Assets) {
         } else {
             assets.player_mesh_doublejumped
         };
+
+        // shoot/aim
+
+        if lr_input != 0. || tb_input != 0. {
+            state.aim_dir = sf::DVec2::new(lr_input, tb_input).normalized();
+        }
+        // annoying state wrangling here, subject to future refactor
+        aim_dir = state.aim_dir;
+        if shoot_input {
+            bullet_position = Some(pose.translation.xy());
+        }
     }
+
+    // break tiles walked on
 
     for ent in tiles_touched {
         if let Ok(mut tile) = game.world.get::<&mut BreakableTile>(ent) {
             tile.is_breaking = true;
         }
+    }
+
+    // spawn bullet
+
+    if let Some(pos) = bullet_position {
+        let pose = sf::PoseBuilder::new().with_position(pos).build();
+        let body = sf::Body::new_kinematic().with_velocity(sf::Velocity {
+            linear: aim_dir * BULLET_SPEED,
+            angular: 0.,
+        });
+        let body = game.physics.entity_set.insert_body(body);
+        let coll = assets
+            .bullet_collider
+            .with_layer(crate::physics_layers::BULLET);
+        let coll = game.physics.entity_set.attach_collider(body, coll);
+        let mesh = assets.bullet_mesh;
+
+        game.world.spawn((pose, body, coll, mesh, Bullet));
     }
 }
 

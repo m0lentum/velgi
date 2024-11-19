@@ -68,7 +68,7 @@ impl Tile {
         let ent_pos = sf::Vec2::new(pos.0 as f32 + 0.5, pos.1 as f32 + 0.5) * TILE_SIZE;
 
         let pose = sf::PoseBuilder::new().with_position(ent_pos).build();
-        let coll = assets.block_collider;
+        let coll = sf::Collider::new_square(crate::level::TILE_SIZE as f64);
         let coll_key = game.physics.entity_set.insert_collider(coll);
         let mesh_id = match self {
             Self::GroundUnbreakable | Self::GroundStrong | Self::GroundWeak => assets.block_mesh,

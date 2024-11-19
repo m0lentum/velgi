@@ -1,6 +1,7 @@
 use starframe as sf;
 
 pub mod level;
+pub mod physics_layers;
 pub mod player;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -32,7 +33,6 @@ pub struct State {
 }
 
 pub struct Assets {
-    block_collider: sf::Collider,
     // meshes will come from gltf eventually,
     // but it might still be nice to have them in this struct
     // so we don't have to look them up by string id
@@ -56,10 +56,7 @@ impl Assets {
         let block_collider = sf::Collider::new_square(level::TILE_SIZE as f64);
         // sf note: would be much nicer if we had a default mesh as a fallback
         // instead of having to deal with options here
-        let block_mesh = game
-            .graphics
-            .get_mesh_id("models.block_wood")
-            .expect("block_wood not in models.glb");
+        let block_mesh = game.graphics.get_mesh_id("models.block_wood").unwrap();
 
         let cloud_mesh = game.graphics.create_mesh(sf::MeshParams {
             name: Some("cloud"),
@@ -119,7 +116,7 @@ impl Assets {
         game.graphics
             .set_mesh_material(player_mesh_doublejumped, player_material_doublejumped);
 
-        let bullet_collider = sf::Collider::new_circle(0.8);
+        let bullet_collider = sf::Collider::new_circle(0.4);
         let bullet_mesh = game.graphics.create_mesh(sf::MeshParams {
             name: Some("bullet"),
             data: sf::MeshData::from(bullet_collider),
@@ -151,7 +148,6 @@ impl Assets {
             .set_mesh_material(background_mesh, background_material);
 
         Self {
-            block_collider,
             block_mesh,
             cloud_mesh,
             player_collider,
@@ -166,6 +162,8 @@ impl Assets {
 
 impl sf::GameState for State {
     fn init(game: &mut sf::Game) -> Self {
+        physics_layers::setup(&mut game.physics);
+
         let assets = Assets::load(game);
         let mut level_gen = level::LevelGenerator::new(include_str!("level/patterns.txt"));
         level_gen.generate(game, &assets);
