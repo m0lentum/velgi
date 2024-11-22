@@ -21,6 +21,7 @@ pub enum Tile {
 pub struct BreakableTile {
     pub time_to_break: f32,
     pub is_breaking: bool,
+    pub blocks_bullets: bool,
 }
 
 impl Tile {
@@ -81,6 +82,7 @@ impl Tile {
             let breakable = BreakableTile {
                 time_to_break,
                 is_breaking: false,
+                blocks_bullets: !matches!(self, Self::Cloud | Self::Empty),
             };
             game.world.insert_one(ent, breakable).unwrap();
         }

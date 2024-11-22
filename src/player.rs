@@ -8,6 +8,7 @@ const JUMP_YSPEED: f64 = 12.;
 const COYOTE_TIME_FRAMES: u32 = 3;
 
 const BULLET_SPEED: f64 = 25.;
+const BULLET_TILE_DAMAGE: f32 = 0.5;
 
 struct PlayerState {
     has_doublejump: bool,
@@ -31,7 +32,7 @@ impl Default for PlayerState {
 }
 
 /// Marker struct to identify bullets
-struct Bullet;
+pub struct Bullet;
 
 pub fn spawn(game: &mut sf::Game, assets: &super::Assets) {
     let state = PlayerState::default();
@@ -189,5 +190,47 @@ pub fn move_camera(game: &mut sf::Game, camera: &mut sf::Camera) {
 
     if pose.translation.y > camera.pose.translation.y {
         camera.pose.translation.y = pose.translation.y;
+    }
+}
+
+/// Check for bullets colliding with tiles and set the tiles to break.
+pub fn handle_bullets(game: &mut sf::Game, camera: &sf::Camera) {
+    // gather hits first so that we don't need tricky nested query shenanigans
+    let mut hits: Vec<(sf::hecs::Entity, sf::hecs::Entity)> = Vec::new();
+    // also destroy bullets that have left the area visible on camera
+    let mut off_cameras: Vec<sf::hecs::Entity> = Vec::new();
+    for (bullet_ent, (_, pose, coll_key)) in game
+        .world
+        .query_mut::<(&Bullet, &sf::Pose, &sf::ColliderKey)>()
+    {
+        for cont in game.physics.contacts_for_collider(*coll_key) {
+            if let Some(hit_ent) = game.hecs_sync.get_collider_entity(cont.colliders[1]) {
+                hits.push((bullet_ent, hit_ent));
+            }
+        }
+
+        if camera
+            .point_world_to_screen(pose.translation.xy())
+            .is_none()
+        {
+            off_cameras.push(bullet_ent);
+        }
+    }
+
+    for (bullet, other) in hits {
+        let Ok((tile,)) = game.world.query_one_mut::<(&mut BreakableTile,)>(other) else {
+            continue;
+        };
+        tile.is_breaking = true;
+        tile.time_to_break -= BULLET_TILE_DAMAGE;
+        if tile.blocks_bullets {
+            // sometimes we'll get the same bullet colliding with multiple things
+            // which creates an error here, just ignore it
+            game.world.despawn(bullet).ok();
+        }
+    }
+
+    for bullet in off_cameras {
+        game.world.despawn(bullet).ok();
     }
 }
