@@ -7,6 +7,7 @@ pub const BULLET: usize = 2;
 // then swapping them to a layer that has collision with the player
 pub const ONEWAY_INACTIVE: usize = 3;
 pub const ONEWAY_ACTIVE: usize = 4;
+pub const SPIKE_ROLLER: usize = 5;
 
 pub fn setup(physics: &mut sf::PhysicsWorld) {
     physics.mask_matrix.ignore(PLAYER, BULLET);

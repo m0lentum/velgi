@@ -14,7 +14,7 @@ const BULLET_SPEED: f64 = 25.;
 const BULLET_TILE_DAMAGE: f32 = 0.5;
 
 pub struct PlayerState {
-    entity: sf::hecs::Entity,
+    pub entity: sf::hecs::Entity,
     has_doublejump: bool,
     frames_since_on_ground: u32,
     holding_jump: bool,

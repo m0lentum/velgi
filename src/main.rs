@@ -4,6 +4,8 @@ pub mod level;
 pub mod physics_layers;
 pub mod player;
 use player::PlayerState;
+pub mod spike_roller;
+use spike_roller::SpikeRoller;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let window = sf::winit::window::WindowBuilder::new()
@@ -32,6 +34,7 @@ pub struct State {
     camera: sf::Camera,
     env_map: sf::EnvironmentMap,
     player: PlayerState,
+    spike_roller: SpikeRoller,
 }
 
 pub struct Assets {
@@ -47,6 +50,7 @@ pub struct Assets {
     bullet_collider: sf::Collider,
     bullet_mesh: sf::MeshId,
     background_mesh: sf::MeshId,
+    spike_roller_mesh: sf::MeshId,
 }
 
 impl Assets {
@@ -149,6 +153,23 @@ impl Assets {
         game.graphics
             .set_mesh_material(background_mesh, background_material);
 
+        let spike_roller_mesh = game.graphics.create_mesh(sf::MeshParams {
+            name: Some("spike_roller"),
+            data: sf::MeshData::from(sf::Collider::new_rect(level::TILEMAP_WIDTH as f64, 1.)),
+            ..Default::default()
+        });
+        let spike_roller_material = game.graphics.create_material(sf::MaterialParams {
+            name: Some("spike_roller"),
+            base_color: Some([0.722, 0.807, 0.820, 1.]),
+            attenuation: Some(sf::AttenuationParams {
+                color: [0.722, 0.809, 0.820],
+                distance: 0.1,
+            }),
+            ..Default::default()
+        });
+        game.graphics
+            .set_mesh_material(spike_roller_mesh, spike_roller_material);
+
         Self {
             block_mesh,
             cloud_mesh,
@@ -158,6 +179,7 @@ impl Assets {
             bullet_collider,
             bullet_mesh,
             background_mesh,
+            spike_roller_mesh,
         }
     }
 }
@@ -169,7 +191,6 @@ impl sf::GameState for State {
         let assets = Assets::load(game);
         let mut level_gen = level::LevelGenerator::new(include_str!("level/patterns.txt"));
         level_gen.generate(game, &assets);
-        let player = PlayerState::spawn(game, &assets);
 
         let mut camera = sf::Camera::new();
         camera.pose.translation.x = level::LEVEL_WIDTH / 2.;
@@ -182,12 +203,16 @@ impl sf::GameState for State {
         let mut env_map = sf::EnvironmentMap::preset_night();
         env_map.lights.clear();
 
+        let player = PlayerState::spawn(game, &assets);
+        let spike_roller = SpikeRoller::spawn(game, &assets);
+
         Self {
             assets,
             level_gen,
             camera,
             env_map,
             player,
+            spike_roller,
         }
     }
 
@@ -199,6 +224,13 @@ impl sf::GameState for State {
         game.physics_tick(&sf::forcefield::Gravity(sf::DVec2::new(0., -15.)), None);
 
         self.player.move_camera(game, &mut self.camera);
+        if self
+            .spike_roller
+            .tick(game, &self.camera, &self.player)
+            .player_hit
+        {
+            println!("dead (TODO: stop and restart)");
+        }
 
         player::handle_bullets(game, &self.camera);
         level::tile::break_tiles(game);
