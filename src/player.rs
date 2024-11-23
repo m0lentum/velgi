@@ -9,6 +9,7 @@ const MAX_XSPEED: f64 = 7.;
 const JUMP_YSPEED: f64 = 12.;
 const COYOTE_TIME_FRAMES: u32 = 3;
 
+const BULLET_RADIUS: f64 = 0.25;
 const BULLET_SPEED: f64 = 25.;
 const BULLET_TILE_DAMAGE: f32 = 0.5;
 
@@ -20,11 +21,14 @@ pub struct PlayerState {
     // aim direction stored here
     // so that we can shoot in the previously pressed direction
     // if no direction is currently held
-    aim_dir: sf::DVec2,
+    aim_dir: sf::math::UnitDVec2,
 }
 
-/// Marker struct to identify bullets
-pub struct Bullet;
+pub struct Bullet {
+    // bullets store their movement direction and move manually
+    // in order to ensure they don't tunnel and only hit one thing at a time
+    dir: sf::math::UnitDVec2,
+}
 
 impl PlayerState {
     pub fn spawn(game: &mut sf::Game, assets: &super::Assets) -> Self {
@@ -50,7 +54,7 @@ impl PlayerState {
             has_doublejump: true,
             frames_since_on_ground: 0,
             holding_jump: false,
-            aim_dir: sf::DVec2::unit_x(),
+            aim_dir: sf::math::UnitDVec2::unit_x(),
         }
     }
 
@@ -161,24 +165,22 @@ impl PlayerState {
         // shoot/aim
 
         if lr_input != 0. || tb_input != 0. {
-            self.aim_dir = sf::DVec2::new(lr_input, tb_input).normalized();
+            self.aim_dir = sf::math::UnitDVec2::new_normalize(sf::DVec2::new(lr_input, tb_input));
         }
         if shoot_input {
             let pose = sf::PoseBuilder::new()
                 .with_position(pose.translation.xy())
                 .build();
-            let body = sf::Body::new_kinematic().with_velocity(sf::Velocity {
-                linear: self.aim_dir * BULLET_SPEED,
-                angular: 0.,
-            });
+            let body = sf::Body::new_kinematic();
             let body = game.physics.entity_set.insert_body(body);
             let coll = assets
                 .bullet_collider
                 .with_layer(crate::physics_layers::BULLET);
             let coll = game.physics.entity_set.attach_collider(body, coll);
             let mesh = assets.bullet_mesh;
+            let bullet = Bullet { dir: self.aim_dir };
 
-            game.world.spawn((pose, body, coll, mesh, Bullet));
+            game.world.spawn((pose, body, coll, mesh, bullet));
         }
 
         // break tiles walked on
@@ -207,15 +209,27 @@ pub fn handle_bullets(game: &mut sf::Game, camera: &sf::Camera) {
     let mut hits: Vec<(sf::hecs::Entity, sf::hecs::Entity)> = Vec::new();
     // also destroy bullets that have left the area visible on camera
     let mut off_cameras: Vec<sf::hecs::Entity> = Vec::new();
-    for (bullet_ent, (_, pose, coll_key)) in game
-        .world
-        .query_mut::<(&Bullet, &sf::Pose, &sf::ColliderKey)>()
-    {
-        for cont in game.physics.contacts_for_collider(*coll_key) {
-            if let Some(hit_ent) = game.hecs_sync.get_collider_entity(cont.colliders[1]) {
-                hits.push((bullet_ent, hit_ent));
-            }
+    for (bullet_ent, (bullet, pose)) in game.world.query_mut::<(&Bullet, &mut sf::Pose)>() {
+        // check for the next thing hit by doing a spherecast
+        // so that we don't end up hitting multiple things at the same time.
+        // sf note: in some cases we'll need to filter cast results by collision layer.
+        // it's not essential here though because the player is the only thing that shouldn't be hit
+        let next_hit = game.physics.spherecast(
+            BULLET_RADIUS,
+            sf::Ray {
+                start: sf::DVec2::new(pose.translation.x as f64, pose.translation.y as f64),
+                dir: bullet.dir,
+            },
+            BULLET_SPEED * game.dt_fixed,
+        );
+        if let Some(ent) = next_hit.and_then(|hit| game.hecs_sync.get_collider_entity(hit.collider))
+        {
+            hits.push((bullet_ent, ent));
         }
+
+        let step = BULLET_SPEED * game.dt_fixed * *bullet.dir;
+        pose.translation.x += step.x as f32;
+        pose.translation.y += step.y as f32;
 
         if camera
             .point_world_to_screen(pose.translation.xy())
