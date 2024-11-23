@@ -53,7 +53,7 @@ impl Assets {
             .load_gltf("assets/models.glb")
             .expect("assets/models.glb not found");
 
-        let block_collider = sf::Collider::new_square(level::TILE_SIZE as f64);
+        let block_collider = sf::Collider::new_square(1.);
         // sf note: would be much nicer if we had a default mesh as a fallback
         // instead of having to deal with options here
         let block_mesh = game.graphics.get_mesh_id("models.block_wood").unwrap();
@@ -134,8 +134,8 @@ impl Assets {
         let background_mesh = game.graphics.create_mesh(sf::MeshParams {
             name: Some("wall"),
             data: sf::MeshData::from(sf::Collider::new_rect(
-                level::TILEMAP_WIDTH as f64 * level::TILE_SIZE as f64,
-                level::CHUNK_HEIGHT as f64 * level::TILE_SIZE as f64,
+                level::TILEMAP_WIDTH as f64,
+                level::CHUNK_HEIGHT as f64,
             )),
             ..Default::default()
         });

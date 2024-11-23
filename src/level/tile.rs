@@ -3,7 +3,6 @@ use core::f32;
 use rand::Rng;
 use starframe as sf;
 
-use super::TILE_SIZE;
 use crate::Assets;
 
 #[derive(Clone, Copy, Debug)]
@@ -66,10 +65,10 @@ impl Tile {
         }
 
         // position the center of the tile in the middle of the grid space
-        let ent_pos = sf::Vec2::new(pos.0 as f32 + 0.5, pos.1 as f32 + 0.5) * TILE_SIZE;
+        let ent_pos = sf::Vec2::new(pos.0 as f32 + 0.5, pos.1 as f32 + 0.5);
 
         let pose = sf::PoseBuilder::new().with_position(ent_pos).build();
-        let coll = sf::Collider::new_square(crate::level::TILE_SIZE as f64);
+        let coll = sf::Collider::new_square(1.);
         let coll_key = game.physics.entity_set.insert_collider(coll);
         let mesh_id = match self {
             Self::GroundUnbreakable | Self::GroundStrong | Self::GroundWeak => assets.block_mesh,

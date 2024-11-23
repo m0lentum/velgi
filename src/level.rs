@@ -6,8 +6,7 @@ pub mod tile;
 use tile::Tile;
 
 pub const TILEMAP_WIDTH: i32 = 20;
-pub const TILE_SIZE: f32 = 1.;
-pub const LEVEL_WIDTH: f32 = TILEMAP_WIDTH as f32 * TILE_SIZE;
+pub const LEVEL_WIDTH: f32 = TILEMAP_WIDTH as f32;
 /// Height of a single pattern / "floor" measured in tiles
 pub const CHUNK_HEIGHT: i32 = 8;
 /// Height of an entire level measured in chunks of CHUNK_HEIGHT tiles
@@ -51,8 +50,8 @@ impl LevelGenerator {
             Tile::GroundUnbreakable.spawn(game, assets, (TILEMAP_WIDTH - 1, height));
         }
 
-        // background walls
-        let chunk_height = CHUNK_HEIGHT as f32 * TILE_SIZE;
+        // background and side walls
+        let chunk_height = CHUNK_HEIGHT as f32;
         for chunk_idx in -1..LEVEL_HEIGHT + 1 {
             let halfway_width = LEVEL_WIDTH / 2.;
             let mid_height = (chunk_idx as f32 + 0.5) * chunk_height;
@@ -62,6 +61,17 @@ impl LevelGenerator {
                 .build();
             let mesh = assets.background_mesh;
             game.world.spawn((pose, mesh));
+
+            let side_wall_coll = sf::Collider::new_square(CHUNK_HEIGHT as f64);
+            let left_wall_x = -CHUNK_HEIGHT as f32 / 2.;
+            let right_wall_x = TILEMAP_WIDTH as f32 + CHUNK_HEIGHT as f32 / 2.;
+            for x in [left_wall_x, right_wall_x] {
+                let pose = sf::PoseBuilder::new()
+                    .with_position([x, mid_height])
+                    .build();
+                let coll = game.physics.entity_set.insert_collider(side_wall_coll);
+                game.world.spawn((pose, coll));
+            }
         }
     }
 
