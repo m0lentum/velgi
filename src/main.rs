@@ -3,6 +3,7 @@ use starframe as sf;
 pub mod level;
 pub mod physics_layers;
 pub mod player;
+use player::PlayerState;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let window = sf::winit::window::WindowBuilder::new()
@@ -30,6 +31,7 @@ pub struct State {
     level_gen: level::LevelGenerator,
     camera: sf::Camera,
     env_map: sf::EnvironmentMap,
+    player: PlayerState,
 }
 
 pub struct Assets {
@@ -167,7 +169,7 @@ impl sf::GameState for State {
         let assets = Assets::load(game);
         let mut level_gen = level::LevelGenerator::new(include_str!("level/patterns.txt"));
         level_gen.generate(game, &assets);
-        player::spawn(game, &assets);
+        let player = PlayerState::spawn(game, &assets);
 
         let mut camera = sf::Camera::new();
         camera.pose.translation.x = level::LEVEL_WIDTH / 2.;
@@ -185,17 +187,18 @@ impl sf::GameState for State {
             level_gen,
             camera,
             env_map,
+            player,
         }
     }
 
     fn tick(&mut self, game: &mut sf::Game) -> Option<()> {
-        player::tick(game, &self.assets);
+        self.player.tick(game, &self.assets);
         // sf note: probably would be nicer to take a 32-bit vector for this forcefield
         // (in general the mixing of f64 and f32 is a bit unfortunate, also in collider parameters.
         // probably should take f32s in every user-facing API)
         game.physics_tick(&sf::forcefield::Gravity(sf::DVec2::new(0., -15.)), None);
 
-        player::move_camera(game, &mut self.camera);
+        self.player.move_camera(game, &mut self.camera);
 
         player::handle_bullets(game, &self.camera);
         level::tile::break_tiles(game);

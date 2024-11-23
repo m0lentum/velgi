@@ -58,6 +58,10 @@ impl Tile {
         }
     }
 
+    pub fn can_jump_through(&self) -> bool {
+        matches!(self, Self::Cloud | Self::Empty)
+    }
+
     /// Spawn this tile at the given position in the grid.
     pub fn spawn(self, game: &mut sf::Game, assets: &Assets, pos: (i32, i32)) {
         if let Self::Empty = self {
@@ -68,7 +72,10 @@ impl Tile {
         let ent_pos = sf::Vec2::new(pos.0 as f32 + 0.5, pos.1 as f32 + 0.5);
 
         let pose = sf::PoseBuilder::new().with_position(ent_pos).build();
-        let coll = sf::Collider::new_square(1.);
+        let mut coll = sf::Collider::new_square(1.);
+        if self.can_jump_through() {
+            coll = coll.with_layer(crate::physics_layers::ONEWAY_INACTIVE);
+        }
         let coll_key = game.physics.entity_set.insert_collider(coll);
         let mesh_id = match self {
             Self::GroundUnbreakable | Self::GroundStrong | Self::GroundWeak => assets.block_mesh,
