@@ -1,6 +1,6 @@
 use starframe as sf;
 
-use crate::level::tile::BreakableTile;
+use crate::{enemy::Enemy, level::tile::BreakableTile};
 
 const COLLIDER_WIDTH: f64 = 0.8;
 
@@ -8,6 +8,8 @@ const PLAYER_MASS: f64 = 1.;
 const MAX_XSPEED: f64 = 7.;
 const JUMP_YSPEED: f64 = 12.;
 const COYOTE_TIME_FRAMES: u32 = 3;
+const KNOCKBACK_SPEED: f64 = 15.;
+const KNOCKBACK_FRAMES: usize = 60;
 
 const BULLET_RADIUS: f64 = 0.25;
 const BULLET_SPEED: f64 = 25.;
@@ -22,6 +24,7 @@ pub struct PlayerState {
     // so that we can shoot in the previously pressed direction
     // if no direction is currently held
     aim_dir: sf::math::UnitDVec2,
+    knockback_frames: usize,
 }
 
 pub struct Bullet {
@@ -55,6 +58,7 @@ impl PlayerState {
             frames_since_on_ground: 0,
             holding_jump: false,
             aim_dir: sf::math::UnitDVec2::unit_x(),
+            knockback_frames: 0,
         }
     }
 
@@ -78,18 +82,29 @@ impl PlayerState {
         let jump_released = game.input.button(jump_btn.released());
         let shoot_input = game.input.button(sf::ButtonQuery::kb(sf::Key::KeyZ));
 
-        let Ok((pose, body_key, coll_key, mesh)) =
-            game.world
-                .query_one_mut::<(&sf::Pose, &sf::BodyKey, &sf::ColliderKey, &mut sf::MeshId)>(
-                    self.entity,
-                )
+        let Ok((&pose, &coll_key)) = game
+            .world
+            .query_one_mut::<(&sf::Pose, &sf::ColliderKey)>(self.entity)
         else {
             return;
         };
 
         // check for being on the ground and also begin destroy blocks touched
         let mut is_on_ground = false;
-        for cont in game.physics.contacts_for_collider(*coll_key) {
+        let mut knockback_vel: Option<sf::DVec2> = None;
+        for cont in game.physics.contacts_for_collider(coll_key) {
+            if let Some(ent) = game.hecs_sync.get_collider_entity(cont.colliders[1]) {
+                if let Ok((_, enemy_pose)) = game.world.query_one_mut::<(&Enemy, &sf::Pose)>(ent) {
+                    knockback_vel = Some(if pose.translation.x < enemy_pose.translation.x {
+                        sf::DVec2::new(-KNOCKBACK_SPEED, 0.)
+                    } else {
+                        sf::DVec2::new(KNOCKBACK_SPEED, 0.)
+                    });
+
+                    game.world.despawn(ent).ok();
+                }
+            }
+
             if cont.normal.y < -0.9 {
                 is_on_ground = true;
 
@@ -98,6 +113,13 @@ impl PlayerState {
                 }
             }
         }
+
+        let Ok((pose, body_key, mesh)) = game
+            .world
+            .query_one_mut::<(&sf::Pose, &sf::BodyKey, &mut sf::MeshId)>(self.entity)
+        else {
+            return;
+        };
 
         if is_on_ground {
             self.has_doublejump = true;
@@ -137,26 +159,36 @@ impl PlayerState {
 
         // controls
 
-        body.velocity.linear.x = lr_input * MAX_XSPEED;
-
-        // jump
-        if jump_input && (is_coyote_time || self.has_doublejump) {
-            body.velocity.linear.y = JUMP_YSPEED;
-            self.holding_jump = true;
-            if !is_coyote_time {
-                self.has_doublejump = false;
-            }
+        if let Some(vel) = knockback_vel {
+            body.velocity.linear = vel;
+            self.knockback_frames = KNOCKBACK_FRAMES;
+            self.has_doublejump = true;
         }
-        // cut jump short when button released
-        if self.holding_jump && jump_released {
-            self.holding_jump = false;
-            if body.velocity.linear.y > 0. {
-                body.velocity.linear.y *= 0.25;
+
+        if self.knockback_frames > 0 {
+            self.knockback_frames -= 1;
+        } else {
+            body.velocity.linear.x = lr_input * MAX_XSPEED;
+
+            // jump
+            if jump_input && (is_coyote_time || self.has_doublejump) {
+                body.velocity.linear.y = JUMP_YSPEED;
+                self.holding_jump = true;
+                if !is_coyote_time {
+                    self.has_doublejump = false;
+                }
+            }
+            // cut jump short when button released
+            if self.holding_jump && jump_released {
+                self.holding_jump = false;
+                if body.velocity.linear.y > 0. {
+                    body.velocity.linear.y *= 0.25;
+                }
             }
         }
 
         // change the mesh depending on whether double jump is spent
-        *mesh = if self.has_doublejump {
+        *mesh = if self.has_doublejump && self.knockback_frames == 0 {
             assets.player_mesh
         } else {
             assets.player_mesh_doublejumped
