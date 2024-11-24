@@ -43,7 +43,8 @@ pub struct Assets {
     // meshes will come from gltf eventually,
     // but it might still be nice to have them in this struct
     // so we don't have to look them up by string id
-    block_mesh: sf::MeshId,
+    block_wood_mesh: sf::MeshId,
+    block_stone_mesh: sf::MeshId,
     cloud_mesh: sf::MeshId,
     player_collider: sf::Collider,
     player_mesh: sf::MeshId,
@@ -62,26 +63,11 @@ impl Assets {
             .load_gltf("assets/models.glb")
             .expect("assets/models.glb not found");
 
-        let block_collider = sf::Collider::new_square(1.);
         // sf note: would be much nicer if we had a default mesh as a fallback
         // instead of having to deal with options here
-        let block_mesh = game.graphics.get_mesh_id("models.block_wood").unwrap();
-
-        let cloud_mesh = game.graphics.create_mesh(sf::MeshParams {
-            name: Some("cloud"),
-            data: sf::MeshData::from(block_collider),
-            ..Default::default()
-        });
-        let cloud_material = game.graphics.create_material(sf::MaterialParams {
-            name: Some("block"),
-            base_color: Some([0.722, 0.807, 0.820, 1.]),
-            attenuation: Some(sf::AttenuationParams {
-                color: [0.722, 0.807, 0.820],
-                distance: 0.5,
-            }),
-            ..Default::default()
-        });
-        game.graphics.set_mesh_material(cloud_mesh, cloud_material);
+        let block_wood_mesh = game.graphics.get_mesh_id("models.block_wood").unwrap();
+        let block_stone_mesh = game.graphics.get_mesh_id("models.block_stone").unwrap();
+        let cloud_mesh = game.graphics.get_mesh_id("models.block_cloud").unwrap();
 
         let player_collider =
             sf::Collider::new_rounded_rect(0.8, 1., 0.1).with_material(sf::PhysicsMaterial {
@@ -187,7 +173,8 @@ impl Assets {
             .set_mesh_material(spike_roller_mesh, spike_roller_material);
 
         Self {
-            block_mesh,
+            block_wood_mesh,
+            block_stone_mesh,
             cloud_mesh,
             player_collider,
             player_mesh,

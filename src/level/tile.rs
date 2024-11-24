@@ -89,7 +89,8 @@ impl Tile {
         }
         let coll_key = game.physics.entity_set.insert_collider(coll);
         let mesh_id = match self {
-            Self::GroundUnbreakable | Self::GroundStrong | Self::GroundWeak => assets.block_mesh,
+            Self::GroundUnbreakable | Self::GroundStrong => assets.block_stone_mesh,
+            Self::GroundWeak => assets.block_wood_mesh,
             Self::Cloud => assets.cloud_mesh,
             Self::Empty | Self::Enemy(_) => unreachable!(),
         };
