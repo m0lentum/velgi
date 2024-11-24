@@ -19,7 +19,15 @@ impl Enemy {
         let pose = sf::PoseBuilder::new().with_position(pos).build();
         let body = sf::Body::new_particle(1.).ignore_gravity();
         let body = game.physics.entity_set.insert_body(body);
-        let coll = sf::Collider::new_circle(0.25).with_layer(crate::physics_layers::ENEMY);
+        let coll = sf::Collider::new_circle(0.25)
+            // sf note: this should be available as a preset
+            // because it's very common in games
+            .with_material(sf::PhysicsMaterial {
+                static_friction_coef: None,
+                dynamic_friction_coef: None,
+                restitution_coef: 0.,
+            })
+            .with_layer(crate::physics_layers::ENEMY);
         let coll = game.physics.entity_set.attach_collider(body, coll);
         let mesh = assets.bomb_mesh;
 
