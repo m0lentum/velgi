@@ -1,5 +1,7 @@
 use starframe as sf;
 
+pub mod enemy;
+use enemy::Enemy;
 pub mod level;
 pub mod physics_layers;
 pub mod player;
@@ -51,6 +53,7 @@ pub struct Assets {
     bullet_mesh: sf::MeshId,
     background_mesh: sf::MeshId,
     spike_roller_mesh: sf::MeshId,
+    bomb_mesh: sf::MeshId,
 }
 
 impl Assets {
@@ -137,6 +140,19 @@ impl Assets {
         game.graphics
             .set_mesh_material(bullet_mesh, bullet_material);
 
+        let bomb_mesh = game.graphics.create_mesh(sf::MeshParams {
+            name: Some("enemy"),
+            data: sf::MeshData::from(sf::Collider::new_circle(0.4)),
+            ..Default::default()
+        });
+        let bomb_material = game.graphics.create_material(sf::MaterialParams {
+            name: Some("enemy"),
+            base_color: Some([0.930, 0.298, 0.140, 1.]),
+            emissive_color: Some([0.930, 0.298, 0.140, 1.]),
+            ..Default::default()
+        });
+        game.graphics.set_mesh_material(bomb_mesh, bomb_material);
+
         let background_mesh = game.graphics.create_mesh(sf::MeshParams {
             name: Some("wall"),
             data: sf::MeshData::from(sf::Collider::new_rect(
@@ -180,6 +196,7 @@ impl Assets {
             bullet_mesh,
             background_mesh,
             spike_roller_mesh,
+            bomb_mesh,
         }
     }
 }
@@ -218,7 +235,8 @@ impl sf::GameState for State {
 
     fn tick(&mut self, game: &mut sf::Game) -> Option<()> {
         self.player.tick(game, &self.assets);
-        // sf note: probably would be nicer to take a 32-bit vector for this forcefield
+        Enemy::tick(game, &self.player);
+        // sf note: would be nicer to take a 32-bit vector for this forcefield
         // (in general the mixing of f64 and f32 is a bit unfortunate, also in collider parameters.
         // probably should take f32s in every user-facing API)
         game.physics_tick(&sf::forcefield::Gravity(sf::DVec2::new(0., -15.)), None);

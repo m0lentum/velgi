@@ -10,25 +10,25 @@
 # patterns should be separated by a single empty line
 #
 XXXXXX__cc
-_____W____
+bbbbbW____
 _____W____
 ___XXXXX__
-__________
+___bbbbb__
 Ccc_______
-_______cCC
-__________
+b______cCC
+________bb
 
 cc________
 ______ccc_
 _c_c______
 _____XX___
-__________
+_____bb___
 CCc_______
-_______cCC
-__________
+bb_____cCC
+________bb
 
 WWWWWWWWWW
-__________
+bbbbbbbbbb
 __________
 _wWWWw____
 __________
@@ -37,19 +37,19 @@ __ccc___CC
 __________
 
 WWWWWWWWWW
-__________
+bbbbbbbbbb
 __________
 ___CXXC___
-__________
+___bbbb___
 Cc________
-_____cCc__
-__________
+b____cCc__
+______b___
 
 _CC_____cC
-_____c____
+_bb__c___b
 __________
 _c__WWW___
-__________
+____bbb___
 __________
 __ccc___CC
-__________
+________bb

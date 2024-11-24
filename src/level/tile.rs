@@ -3,7 +3,7 @@ use core::f32;
 use rand::Rng;
 use starframe as sf;
 
-use crate::Assets;
+use crate::{enemy::Enemy, Assets};
 
 #[derive(Clone, Copy, Debug)]
 pub enum Tile {
@@ -13,6 +13,7 @@ pub enum Tile {
     GroundStrong,
     // unbreakable ground only at the starting platform
     GroundUnbreakable,
+    Enemy(Enemy),
 }
 
 /// State that tracks when a block needs to break
@@ -35,6 +36,10 @@ impl Tile {
             'w' => (Self::GroundWeak, 0.5),
             'C' => (Self::Cloud, 1.),
             'c' => (Self::Cloud, 0.5),
+            // enemies follow a different spawning logic,
+            // just give them a probability 1 here
+            // and handle that elsewhere
+            'b' => (Self::Enemy(Enemy::bat()), 1.),
             _ => (Self::Empty, 1.),
         };
 
@@ -51,7 +56,7 @@ impl Tile {
 
     pub fn time_to_break(&self) -> Option<f32> {
         match self {
-            Self::GroundUnbreakable | Self::Empty => None,
+            Self::GroundUnbreakable | Self::Empty | Self::Enemy(_) => None,
             Self::GroundStrong => Some(2.),
             Self::GroundWeak => Some(0.75),
             Self::Cloud => Some(0.5),
@@ -71,6 +76,12 @@ impl Tile {
         // position the center of the tile in the middle of the grid space
         let ent_pos = sf::Vec2::new(pos.0 as f32 + 0.5, pos.1 as f32 + 0.5);
 
+        // let enemies handle their own spawning logic
+        if let Self::Enemy(enemy) = self {
+            enemy.spawn(game, assets, ent_pos);
+            return;
+        }
+
         let pose = sf::PoseBuilder::new().with_position(ent_pos).build();
         let mut coll = sf::Collider::new_square(1.);
         if self.can_jump_through() {
@@ -80,7 +91,7 @@ impl Tile {
         let mesh_id = match self {
             Self::GroundUnbreakable | Self::GroundStrong | Self::GroundWeak => assets.block_mesh,
             Self::Cloud => assets.cloud_mesh,
-            Self::Empty => unreachable!(),
+            Self::Empty | Self::Enemy(_) => unreachable!(),
         };
 
         let ent = game.world.spawn((pose, coll_key, mesh_id));

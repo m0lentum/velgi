@@ -65,6 +65,9 @@ impl SpikeRoller {
                 tile.time_to_break = tile.time_to_break.min(0.25);
             } else if ent == player.entity {
                 return TickResult { player_hit: true };
+            } else {
+                // all entities besides the player and tiles are just destroyed
+                game.world.despawn(ent).ok();
             }
         }
 

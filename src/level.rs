@@ -1,5 +1,5 @@
 use itertools::Itertools;
-use rand::seq::SliceRandom;
+use rand::{seq::SliceRandom, Rng};
 use starframe as sf;
 
 pub mod tile;
@@ -78,6 +78,10 @@ impl LevelGenerator {
     fn gen_tiles(&mut self, game: &mut sf::Game, assets: &super::Assets) {
         let mut rng = rand::thread_rng();
         for chunk_idx in 0..LEVEL_HEIGHT {
+            // for enemies, patterns only mark possible spawn locations
+            // and we pick a random number of them to actually spawn
+            let mut possible_enemy_spawns: Vec<(Tile, i32, i32)> = Vec::new();
+
             // pick a pattern for the left and right sides
             // and spawn all the blocks related to each
             for (side, start_x) in [(1, 0), (-1, TILEMAP_WIDTH - 1)] {
@@ -94,10 +98,27 @@ impl LevelGenerator {
                     }
 
                     let tile = Tile::pick(c);
-                    tile.spawn(game, assets, (tile_x, tile_y));
+                    if let Tile::Enemy(_) = tile {
+                        possible_enemy_spawns.push((tile, tile_x, tile_y));
+                    } else {
+                        tile.spawn(game, assets, (tile_x, tile_y));
+                    }
 
                     tile_x += side;
                 }
+            }
+
+            possible_enemy_spawns.shuffle(&mut rng);
+            let enemies_in_chunk = if chunk_idx == 0 {
+                0
+            } else {
+                rng.gen_range(0..=3)
+            };
+            for _ in 0..enemies_in_chunk {
+                let Some((tile, x, y)) = possible_enemy_spawns.pop() else {
+                    break;
+                };
+                tile.spawn(game, assets, (x, y));
             }
         }
     }
