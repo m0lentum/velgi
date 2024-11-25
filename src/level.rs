@@ -36,7 +36,6 @@ impl LevelGenerator {
     }
 
     pub fn generate(&mut self, game: &mut sf::Game, assets: &super::Assets) {
-        game.world.clear();
         self.spawn_fixtures(game, assets);
         self.gen_tiles(game, assets);
     }
