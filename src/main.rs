@@ -57,7 +57,6 @@ pub struct Assets {
     player_mesh: sf::MeshId,
     // separate mesh with a different color for when double jump is spent
     player_mesh_doublejumped: sf::MeshId,
-    bullet_collider: sf::Collider,
     bullet_mesh: sf::MeshId,
     background_mesh: sf::MeshId,
     spike_roller_mesh: sf::MeshId,
@@ -118,10 +117,9 @@ impl Assets {
         game.graphics
             .set_mesh_material(player_mesh_doublejumped, player_material_doublejumped);
 
-        let bullet_collider = sf::Collider::new_circle(0.4);
         let bullet_mesh = game.graphics.create_mesh(sf::MeshParams {
             name: Some("bullet"),
-            data: sf::MeshData::from(bullet_collider),
+            data: sf::MeshData::from(sf::Collider::new_circle(0.4)),
             ..Default::default()
         });
         let bullet_material = game.graphics.create_material(sf::MaterialParams {
@@ -186,7 +184,6 @@ impl Assets {
             player_collider,
             player_mesh,
             player_mesh_doublejumped,
-            bullet_collider,
             bullet_mesh,
             background_mesh,
             spike_roller_mesh,

@@ -11,7 +11,7 @@ const COYOTE_TIME_FRAMES: u32 = 3;
 const KNOCKBACK_SPEED: f64 = 15.;
 const KNOCKBACK_FRAMES: usize = 60;
 
-const BULLET_RADIUS: f64 = 0.25;
+const BULLET_RADIUS: f64 = 0.4;
 const BULLET_SPEED: f64 = 25.;
 const BULLET_TILE_DAMAGE: f32 = 0.5;
 
@@ -205,14 +205,10 @@ impl PlayerState {
                 .build();
             let body = sf::Body::new_kinematic();
             let body = game.physics.entity_set.insert_body(body);
-            let coll = assets
-                .bullet_collider
-                .with_layer(crate::physics_layers::BULLET);
-            let coll = game.physics.entity_set.attach_collider(body, coll);
             let mesh = assets.bullet_mesh;
             let bullet = Bullet { dir: self.aim_dir };
 
-            game.world.spawn((pose, body, coll, mesh, bullet));
+            game.world.spawn((pose, body, mesh, bullet));
         }
 
         // break tiles walked on
@@ -272,14 +268,16 @@ pub fn handle_bullets(game: &mut sf::Game, camera: &sf::Camera) {
     }
 
     for (bullet, other) in hits {
-        let Ok((tile,)) = game.world.query_one_mut::<(&mut BreakableTile,)>(other) else {
-            continue;
-        };
-        tile.is_breaking = true;
-        tile.time_to_break -= BULLET_TILE_DAMAGE;
-        if tile.blocks_bullets {
-            // sometimes we'll get the same bullet colliding with multiple things
-            // which creates an error here, just ignore it
+        if let Ok((tile,)) = game.world.query_one_mut::<(&mut BreakableTile,)>(other) {
+            tile.is_breaking = true;
+            tile.time_to_break -= BULLET_TILE_DAMAGE;
+            if tile.blocks_bullets {
+                game.world.despawn(bullet).ok();
+            }
+        } else if let Ok(true) = game.world.satisfies::<(&mut Enemy,)>(other) {
+            // hitting an enemy destroys both the enemy and the bullet
+            // (maybe eventually there could be enemies with HP but not yet)
+            game.world.despawn(other).ok();
             game.world.despawn(bullet).ok();
         }
     }
