@@ -268,7 +268,8 @@ pub fn handle_bullets(game: &mut sf::Game, camera: &sf::Camera) {
                 start: sf::DVec2::new(pose.translation.x as f64, pose.translation.y as f64),
                 dir: bullet.dir,
             },
-            BULLET_SPEED * game.dt_fixed,
+            // add a bit of extra distance to avoid tunneling
+            BULLET_SPEED * game.dt_fixed + 0.05,
         );
         if let Some(ent) = next_hit.and_then(|hit| game.hecs_sync.get_collider_entity(hit.collider))
         {
