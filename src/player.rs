@@ -262,6 +262,9 @@ pub fn handle_bullets(game: &mut sf::Game, camera: &sf::Camera) {
         // so that we don't end up hitting multiple things at the same time.
         // sf note: in some cases we'll need to filter cast results by collision layer.
         // it's not essential here though because the player is the only thing that shouldn't be hit
+        // sf note 2: it would be nice if we could return everything hit along the ray
+        // instead of just the nearest thing
+        // (currently enemies can be missed by this if they're inside a cloud)
         let next_hit = game.physics.spherecast(
             BULLET_RADIUS,
             sf::Ray {

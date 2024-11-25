@@ -223,6 +223,7 @@ impl sf::GameState for State {
 
         let mut env_map = sf::EnvironmentMap::preset_night();
         env_map.lights.clear();
+        env_map.ambient.iter_mut().for_each(|c| *c *= 2.);
 
         let player = PlayerState::spawn(game, &assets);
         let spike_roller = SpikeRoller::spawn(game, &assets);

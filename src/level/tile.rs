@@ -59,7 +59,7 @@ impl Tile {
             Self::GroundUnbreakable | Self::Empty | Self::Enemy(_) => None,
             Self::GroundStrong => Some(2.),
             Self::GroundWeak => Some(0.75),
-            Self::Cloud => Some(0.5),
+            Self::Cloud => Some(0.3),
         }
     }
 
