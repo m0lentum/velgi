@@ -7,6 +7,8 @@ const COLLIDER_WIDTH: f64 = 0.8;
 const PLAYER_MASS: f64 = 1.;
 const MAX_XSPEED: f64 = 7.;
 const JUMP_YSPEED: f64 = 12.;
+const ENEMY_BOUNCE_YSPEED_JUMP_HELD: f64 = 10.;
+const ENEMY_BOUNCE_YSPEED_JUMP_RELEASED: f64 = 5.;
 const COYOTE_TIME_FRAMES: u32 = 3;
 const KNOCKBACK_SPEED: f64 = 15.;
 const KNOCKBACK_FRAMES: usize = 60;
@@ -78,7 +80,8 @@ impl PlayerState {
             neg_btn: sf::Key::ArrowDown.into(),
         });
         let jump_btn = sf::ButtonQuery::kb(sf::Key::ShiftLeft);
-        let jump_input = game.input.button(jump_btn);
+        let jump_pressed = game.input.button(jump_btn);
+        let jump_held = game.input.button(jump_btn.held());
         let jump_released = game.input.button(jump_btn.released());
         let shoot_input = game.input.button(sf::ButtonQuery::kb(sf::Key::KeyZ));
 
@@ -91,15 +94,23 @@ impl PlayerState {
 
         // check for being on the ground and also begin destroy blocks touched
         let mut is_on_ground = false;
+        // defer applying enemy bounce and knockback to when we have a reference to the player body
+        let mut bounced_on_enemy = false;
         let mut knockback_vel: Option<sf::DVec2> = None;
         for cont in game.physics.contacts_for_collider(coll_key) {
             if let Some(ent) = game.hecs_sync.get_collider_entity(cont.colliders[1]) {
                 if let Ok((_, enemy_pose)) = game.world.query_one_mut::<(&Enemy, &sf::Pose)>(ent) {
-                    knockback_vel = Some(if pose.translation.x < enemy_pose.translation.x {
-                        sf::DVec2::new(-KNOCKBACK_SPEED, 0.)
+                    if cont.normal.y > -0.75 {
+                        // hit from the side, get knocked back
+                        knockback_vel = Some(if pose.translation.x < enemy_pose.translation.x {
+                            sf::DVec2::new(-KNOCKBACK_SPEED, 0.)
+                        } else {
+                            sf::DVec2::new(KNOCKBACK_SPEED, 0.)
+                        });
                     } else {
-                        sf::DVec2::new(KNOCKBACK_SPEED, 0.)
-                    });
+                        // on top of the enemy, bounce
+                        bounced_on_enemy = true;
+                    }
 
                     game.world.despawn(ent).ok();
                 }
@@ -139,7 +150,7 @@ impl PlayerState {
                 // would be nice to have a better solution for this
                 // sf note: we could probably provide something like this out of the box,
                 // like a collider that only resolves collisions in a specific direction
-                start: sf::DVec2::new(pose.translation.x as f64, pose.translation.y as f64 + 0.3),
+                start: sf::DVec2::new(pose.translation.x as f64, pose.translation.y as f64 + 0.31),
                 dir: sf::math::UnitDVec2::new_unchecked(sf::DVec2::new(0., -1.)),
             },
             5.,
@@ -165,13 +176,22 @@ impl PlayerState {
             self.has_doublejump = true;
         }
 
+        if bounced_on_enemy {
+            self.has_doublejump = true;
+            body.velocity.linear.y = if jump_held {
+                ENEMY_BOUNCE_YSPEED_JUMP_HELD
+            } else {
+                ENEMY_BOUNCE_YSPEED_JUMP_RELEASED
+            };
+        }
+
         if self.knockback_frames > 0 {
             self.knockback_frames -= 1;
         } else {
             body.velocity.linear.x = lr_input * MAX_XSPEED;
 
             // jump
-            if jump_input && (is_coyote_time || self.has_doublejump) {
+            if jump_pressed && (is_coyote_time || self.has_doublejump) {
                 body.velocity.linear.y = JUMP_YSPEED;
                 self.holding_jump = true;
                 if !is_coyote_time {
