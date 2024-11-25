@@ -199,7 +199,7 @@ impl State {
         game.physics.clear();
         game.hecs_sync.clear();
         self.level_gen.generate(game, &self.assets);
-        self.camera.pose.translation.y = 0.;
+        self.camera.pose.translation.y = 3.;
         self.player = PlayerState::spawn(game, &self.assets);
         self.spike_roller = SpikeRoller::spawn(game, &self.assets);
     }
@@ -215,6 +215,7 @@ impl sf::GameState for State {
 
         let mut camera = sf::Camera::new();
         camera.pose.translation.x = level::LEVEL_WIDTH / 2.;
+        camera.pose.translation.y = 3.;
         // always scale the view to the same height
         // (this can lose sight of the level edges if the window is too narrow.
         // sf note: add a way to enforce 16:9 aspect ratio)
