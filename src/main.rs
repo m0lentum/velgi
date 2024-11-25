@@ -66,8 +66,8 @@ pub struct Assets {
 impl Assets {
     fn load(game: &mut sf::Game) -> Self {
         game.graphics
-            .load_gltf("assets/models.glb")
-            .expect("assets/models.glb not found");
+            .load_gltf_bytes("models", include_bytes!("../assets/models.glb"))
+            .expect("failed to load assets");
 
         // sf note: would be much nicer if we had a default mesh as a fallback
         // instead of having to deal with options here
