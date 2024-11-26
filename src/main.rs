@@ -22,7 +22,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         graphics: sf::GraphicsConfig {
             fps: 60,
             use_vsync: false,
-            lighting_quality: sf::LightingQualityConfig::default(),
+            lighting_quality: sf::LightingQualityConfig::MEDIUM,
         },
         ..Default::default()
     })?;
@@ -241,6 +241,24 @@ impl sf::GameState for State {
     }
 
     fn tick(&mut self, game: &mut sf::Game) -> Option<()> {
+        // keyboard controls to change lighting quality (no time to implement a settings menu)
+        if game.input.button(sf::Key::Digit1.into()) {
+            game.renderer
+                .set_lighting_quality(sf::LightingQualityConfig::LOWEST);
+        }
+        if game.input.button(sf::Key::Digit2.into()) {
+            game.renderer
+                .set_lighting_quality(sf::LightingQualityConfig::LOW);
+        }
+        if game.input.button(sf::Key::Digit3.into()) {
+            game.renderer
+                .set_lighting_quality(sf::LightingQualityConfig::MEDIUM);
+        }
+        if game.input.button(sf::Key::Digit4.into()) {
+            game.renderer
+                .set_lighting_quality(sf::LightingQualityConfig::HIGH);
+        }
+
         match self.state {
             GameplayState::Playing => {
                 self.player.tick(game, &self.assets);
