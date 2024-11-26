@@ -13,7 +13,7 @@ const COYOTE_TIME_FRAMES: u32 = 3;
 const KNOCKBACK_SPEED: f64 = 15.;
 const KNOCKBACK_FRAMES: usize = 60;
 
-const BULLET_RADIUS: f64 = 0.4;
+const BULLET_RADIUS: f64 = 0.35;
 const BULLET_SPEED: f64 = 25.;
 const BULLET_TILE_DAMAGE: f32 = 0.5;
 
