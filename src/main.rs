@@ -61,6 +61,7 @@ pub struct Assets {
     background_mesh: sf::MeshId,
     spike_roller_mesh: sf::MeshId,
     bomb_mesh: sf::MeshId,
+    lantern_mesh: sf::MeshId,
 }
 
 impl Assets {
@@ -177,6 +178,25 @@ impl Assets {
         game.graphics
             .set_mesh_material(spike_roller_mesh, spike_roller_material);
 
+        let lantern_mesh = game.graphics.create_mesh(sf::MeshParams {
+            name: Some("lantern"),
+            data: sf::MeshData::from(sf::Collider::new_capsule(0.75, 0.5)),
+            ..Default::default()
+        });
+        // sf note: with the current volumetrics impl
+        // lights have to be pretty big to be bright.
+        // opaque lights should have a special treatment
+        // where they emit all their light immediately instead of over distance
+        let lantern_material = game.graphics.create_material(sf::MaterialParams {
+            name: Some("lantern"),
+            base_color: Some([1., 1., 1., 0.5]),
+            attenuation: None,
+            emissive_color: Some([0.990, 0.973, 0.782, 1.]),
+            ..Default::default()
+        });
+        game.graphics
+            .set_mesh_material(lantern_mesh, lantern_material);
+
         Self {
             block_wood_mesh,
             block_stone_mesh,
@@ -188,6 +208,7 @@ impl Assets {
             background_mesh,
             spike_roller_mesh,
             bomb_mesh,
+            lantern_mesh,
         }
     }
 }

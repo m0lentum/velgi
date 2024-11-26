@@ -71,6 +71,22 @@ impl LevelGenerator {
                 let coll = game.physics.entity_set.insert_collider(side_wall_coll);
                 game.world.spawn((pose, coll));
             }
+
+            // lanterns along the walls for extra light
+            if chunk_idx >= 0 {
+                let lantern_x = if chunk_idx % 2 == 0 {
+                    TILEMAP_WIDTH as f32
+                } else {
+                    0.
+                };
+
+                let pose = sf::PoseBuilder::new()
+                    .with_position([lantern_x, mid_height])
+                    .with_rotation(sf::Angle::Deg(90.))
+                    .build();
+                let mesh = assets.lantern_mesh;
+                game.world.spawn((pose, mesh));
+            }
         }
     }
 
