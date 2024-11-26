@@ -22,7 +22,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         graphics: sf::GraphicsConfig {
             fps: 60,
             use_vsync: false,
-            lighting_quality: sf::LightingQualityConfig::MEDIUM,
+            lighting_quality: sf::LightingQualityConfig::HIGH,
         },
         ..Default::default()
     })?;
