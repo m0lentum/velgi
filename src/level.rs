@@ -20,8 +20,12 @@ pub struct LevelGenerator {
 
 impl LevelGenerator {
     pub fn new(pattern_data: &str) -> Self {
+        #[cfg(windows)]
+        let split_pat = "\r\n\r\n";
+        #[cfg(not(windows))]
+        let split_pat = "\n\n";
         let patterns = pattern_data
-            .split("\n\n")
+            .split(split_pat)
             .map(|pat| {
                 #[allow(unstable_name_collisions)]
                 String::from_iter(
