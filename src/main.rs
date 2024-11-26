@@ -93,7 +93,7 @@ impl Assets {
             emissive_color: Some([0.598, 0.740, 0.333, 1.]),
             attenuation: Some(sf::AttenuationParams {
                 color: [0.598, 0.740, 0.333],
-                distance: 0.5,
+                distance: 0.25,
             }),
             ..Default::default()
         });
@@ -111,7 +111,7 @@ impl Assets {
             emissive_color: Some([0.700, 0.368, 0.161, 1.]),
             attenuation: Some(sf::AttenuationParams {
                 color: [0.700, 0.368, 0.161],
-                distance: 0.5,
+                distance: 0.25,
             }),
             ..Default::default()
         });
@@ -127,6 +127,10 @@ impl Assets {
             name: Some("bullet"),
             base_color: Some([0.910, 0.830, 0.473, 1.]),
             emissive_color: Some([0.910, 0.830, 0.473, 1.]),
+            attenuation: Some(sf::AttenuationParams {
+                color: [0.910, 0.830, 0.473],
+                distance: 0.25,
+            }),
             ..Default::default()
         });
         game.graphics
@@ -141,6 +145,10 @@ impl Assets {
             name: Some("enemy"),
             base_color: Some([0.930, 0.298, 0.140, 1.]),
             emissive_color: Some([0.930, 0.298, 0.140, 1.]),
+            attenuation: Some(sf::AttenuationParams {
+                color: [0.930, 0.298, 0.140],
+                distance: 0.25,
+            }),
             ..Default::default()
         });
         game.graphics.set_mesh_material(bomb_mesh, bomb_material);
@@ -189,9 +197,12 @@ impl Assets {
         // where they emit all their light immediately instead of over distance
         let lantern_material = game.graphics.create_material(sf::MaterialParams {
             name: Some("lantern"),
-            base_color: Some([1., 1., 1., 0.5]),
-            attenuation: None,
+            base_color: Some([0.990, 0.973, 0.782, 0.5]),
             emissive_color: Some([0.990, 0.973, 0.782, 1.]),
+            attenuation: Some(sf::AttenuationParams {
+                color: [0.5, 0.5, 0.5],
+                distance: 0.1,
+            }),
             ..Default::default()
         });
         game.graphics
@@ -245,7 +256,7 @@ impl sf::GameState for State {
 
         let mut env_map = sf::EnvironmentMap::preset_night();
         env_map.lights.clear();
-        env_map.ambient.iter_mut().for_each(|c| *c *= 2.);
+        env_map.ambient.iter_mut().for_each(|c| *c *= 3.);
 
         let player = PlayerState::spawn(game, &assets);
         let spike_roller = SpikeRoller::spawn(game, &assets);
