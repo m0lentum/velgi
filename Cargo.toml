@@ -6,7 +6,9 @@ edition = "2021"
 [dependencies]
 itertools = "0.13.0"
 rand = "0.8.5"
-starframe = { path = "../starframe" }
+starframe = { git = "https://github.com/m0lentum/starframe", rev = "6a3608a376a747d259036a6cfd465859c9917e1a" }
+# for dev:
+# starframe = { path = "../starframe" }
 
 [profile.dev]
 opt-level = 2

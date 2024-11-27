@@ -1735,6 +1735,7 @@ dependencies = [
 [[package]]
 name = "starframe"
 version = "0.1.0"
+source = "git+https://github.com/m0lentum/starframe?rev=6a3608a376a747d259036a6cfd465859c9917e1a#6a3608a376a747d259036a6cfd465859c9917e1a"
 dependencies = [
  "console_error_panic_hook",
  "console_log",
