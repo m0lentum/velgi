@@ -5,6 +5,7 @@
 # X = strong ground
 # W = weak ground
 # C = cloud
+# b = bat spawn point
 # anything else = empty
 # capitals are always there, lowercase have a random chance to appear.
 # patterns should be separated by a single empty line
@@ -53,3 +54,39 @@ ____bbb___
 __________
 __ccc___CC
 ________bb
+
+______C___
+_C____b_C_
+_b__C___b_
+____b__C__
+__C____b__
+__b__C____
+_C___b__C_
+_b______b_
+
+__________
+___XCCX___
+___XbbX___
+___X__X___
+___X__X___
+___X__X___
+___XCCX___
+___bbbb___
+
+_xXX___c__
+__bb______
+__________
+__c___xXX_
+_______bb_
+__________
+_XXx__c___
+_bb_______
+
+XXXXXXXX__
+bbbbbbbW__
+_______W__
+____W__W__
+____W__b__
+____W_____
+CCc_XXXXX_
+bb__bbbbb_
