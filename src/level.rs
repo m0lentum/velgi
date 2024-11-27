@@ -55,8 +55,8 @@ impl LevelGenerator {
 
         // background and side walls
         let chunk_height = CHUNK_HEIGHT as f32;
+        let halfway_width = LEVEL_WIDTH / 2.;
         for chunk_idx in -1..LEVEL_HEIGHT + 1 {
-            let halfway_width = LEVEL_WIDTH / 2.;
             let mid_height = (chunk_idx as f32 + 0.5) * chunk_height;
             let pose = sf::PoseBuilder::new()
                 .with_position([halfway_width, mid_height])
@@ -92,6 +92,22 @@ impl LevelGenerator {
                 game.world.spawn((pose, mesh));
             }
         }
+
+        // spawn a "you win" text at the top of the level
+        // (no time to make an actual win animation)
+        let top_y = (LEVEL_HEIGHT as f32 + 0.5) * CHUNK_HEIGHT as f32;
+        let pose = sf::PoseBuilder::new()
+            .with_position([halfway_width, top_y])
+            .with_depth(-10.)
+            .build();
+        game.world.spawn((pose, assets.you_win_mesh));
+
+        // also a little Barbuta-based easter egg in case somebody bounces on enemies really high
+        let pose = sf::PoseBuilder::new()
+            .with_position([halfway_width, top_y + 2. * CHUNK_HEIGHT as f32])
+            .with_depth(-10.)
+            .build();
+        game.world.spawn((pose, assets.barbut_mesh));
     }
 
     fn gen_tiles(&mut self, game: &mut sf::Game, assets: &super::Assets) {

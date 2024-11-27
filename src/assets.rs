@@ -17,6 +17,7 @@ pub struct Assets {
     pub bomb_mesh: sf::MeshId,
     pub lantern_mesh: sf::MeshId,
     pub you_win_mesh: sf::MeshId,
+    pub game_over_mesh: sf::MeshId,
     pub barbut_mesh: sf::MeshId,
 }
 
@@ -32,6 +33,7 @@ impl Assets {
         let block_stone_mesh = game.graphics.get_mesh_id("models.block_stone").unwrap();
         let cloud_mesh = game.graphics.get_mesh_id("models.block_cloud").unwrap();
         let you_win_mesh = game.graphics.get_mesh_id("models.you_win").unwrap();
+        let game_over_mesh = game.graphics.get_mesh_id("models.game_over").unwrap();
         let barbut_mesh = game.graphics.get_mesh_id("models.barbut").unwrap();
 
         let player_collider =
@@ -182,6 +184,7 @@ impl Assets {
             bomb_mesh,
             lantern_mesh,
             you_win_mesh,
+            game_over_mesh,
             barbut_mesh,
         }
     }

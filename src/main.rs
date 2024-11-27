@@ -132,6 +132,13 @@ impl sf::GameState for State {
 
                 if roller_result.player_hit {
                     self.state = GameplayState::GameOver;
+                    // spawn a "game over" message in the world
+                    // (we don't have text/menu type stuff in starframe yet)
+                    let pose = sf::PoseBuilder::new()
+                        .with_position(self.camera.pose.translation.xy())
+                        .with_depth(-10.)
+                        .build();
+                    game.world.spawn((pose, self.assets.game_over_mesh));
                 }
             }
             GameplayState::GameOver => {
