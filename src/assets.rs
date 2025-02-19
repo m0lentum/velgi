@@ -36,12 +36,8 @@ impl Assets {
         let game_over_mesh = game.graphics.get_mesh_id("models.game_over").unwrap();
         let barbut_mesh = game.graphics.get_mesh_id("models.barbut").unwrap();
 
-        let player_collider =
-            sf::Collider::new_rounded_rect(0.8, 1., 0.1).with_material(sf::PhysicsMaterial {
-                static_friction_coef: None,
-                dynamic_friction_coef: None,
-                restitution_coef: 0.,
-            });
+        let player_collider = sf::Collider::new_rounded_rect(0.8, 1., 0.1)
+            .with_material(sf::PhysicsMaterial::frictionless_unelastic());
         let player_mesh = game.graphics.create_mesh(sf::MeshParams {
             name: Some("player"),
             data: sf::MeshData::from(player_collider),
@@ -154,10 +150,6 @@ impl Assets {
             data: sf::MeshData::from(sf::Collider::new_capsule(0.75, 0.5)),
             ..Default::default()
         });
-        // sf note: with the current volumetrics impl
-        // lights have to be pretty big to be bright.
-        // opaque lights should have a special treatment
-        // where they emit all their light immediately instead of over distance
         let lantern_material = game.graphics.create_material(sf::MaterialParams {
             name: Some("lantern"),
             base_color: Some([0.990, 0.973, 0.782, 0.5]),

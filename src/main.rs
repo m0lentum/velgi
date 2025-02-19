@@ -24,7 +24,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         graphics: sf::GraphicsConfig {
             fps: 60,
             use_vsync: false,
-            lighting_quality: sf::LightingQualityConfig::HIGH,
+            lighting: sf::LightingConfig {
+                quality: sf::LightingQualityConfig::HIGH,
+                ..Default::default()
+            },
         },
         ..Default::default()
     })?;
@@ -119,9 +122,6 @@ impl sf::GameState for State {
             GameplayState::Playing => {
                 self.player.tick(game, &self.assets);
                 Enemy::tick(game, &self.player);
-                // sf note: would be nicer to take a 32-bit vector for this forcefield
-                // (in general the mixing of f64 and f32 is a bit unfortunate, also in collider parameters.
-                // probably should take f32s in every user-facing API)
                 game.physics_tick(&sf::forcefield::Gravity(sf::DVec2::new(0., -15.)), None);
 
                 self.player.move_camera(game, &mut self.camera);

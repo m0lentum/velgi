@@ -1,5 +1,7 @@
 use starframe as sf;
 
+use sf::math::ConvertPrecision;
+
 use crate::{enemy::Enemy, level::tile::BreakableTile};
 
 const COLLIDER_WIDTH: f64 = 0.8;
@@ -150,10 +152,10 @@ impl PlayerState {
                 // would be nice to have a better solution for this
                 // sf note: we could probably provide something like this out of the box,
                 // like a collider that only resolves collisions in a specific direction
-                start: sf::DVec2::new(pose.translation.x as f64, pose.translation.y as f64 + 0.31),
+                start: sf::Vec2::new(pose.translation.x, pose.translation.y + 0.31).to_precision(),
                 dir: sf::math::UnitDVec2::new_unchecked(sf::DVec2::new(0., -1.)),
+                length: 5.,
             },
-            5.,
         ) {
             if let Some(coll) = game.physics.entity_set.get_collider_mut(hit_below.collider) {
                 if coll.layer == crate::physics_layers::ONEWAY_INACTIVE {
@@ -268,11 +270,11 @@ pub fn handle_bullets(game: &mut sf::Game, camera: &sf::Camera) {
         let next_hit = game.physics.spherecast(
             BULLET_RADIUS,
             sf::Ray {
-                start: sf::DVec2::new(pose.translation.x as f64, pose.translation.y as f64),
+                start: pose.translation.xy().to_precision(),
                 dir: bullet.dir,
+                // add a bit of extra distance to avoid tunneling
+                length: BULLET_SPEED * game.dt_fixed + 0.05,
             },
-            // add a bit of extra distance to avoid tunneling
-            BULLET_SPEED * game.dt_fixed + 0.05,
         );
         if let Some(ent) = next_hit.and_then(|hit| game.hecs_sync.get_collider_entity(hit.collider))
         {
